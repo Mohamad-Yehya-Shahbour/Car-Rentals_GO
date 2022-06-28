@@ -79,6 +79,13 @@ func ReturnCar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var temp Temp
+
+	// driven kilometers should be entered this way as json data through the request
+
+	// {
+	// 	"driven":7000
+	// }
+	
 	err := json.NewDecoder(r.Body).Decode(&temp)
 	if err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)
