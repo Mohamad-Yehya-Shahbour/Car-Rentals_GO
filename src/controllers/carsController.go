@@ -2,8 +2,11 @@ package controllers
 
 import (
 	"encoding/json"
-	"strconv"
+	"fmt"
+	"log"
 	"net/http"
+	"strconv"
+
 	"github.com/gorilla/mux"
 	"github.com/mys/go-rentals/src/models"
 	"github.com/mys/go-rentals/src/utils"
@@ -15,6 +18,26 @@ type Temp struct {
 	Driven int `json:"driven"`
 }
 
+func AddToken(w http.ResponseWriter, r *http.Request) {
+	validToken, err := utils.GenerateJWT()
+	if err != nil {
+		fmt.Println("Failed to generate token")
+	}
+
+	resp := make(map[string]string)
+	resp["Token"] = validToken
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
+	}
+	w.Header().Set("Token", validToken)
+	w.Write(jsonResp)
+}
+
+func TestToken(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+	w.Write([]byte("entered"))
+}
 
 func GetCars(w http.ResponseWriter, r *http.Request) {
 	NewCar := models.GetAllCars()
@@ -23,7 +46,6 @@ func GetCars(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(res)
 }
-
 
 func CreateCar(w http.ResponseWriter, r *http.Request) {
 	CreateCar := &models.Car{}
@@ -40,7 +62,6 @@ func CreateCar(w http.ResponseWriter, r *http.Request) {
 	var id string = strconv.FormatUint(uint64(c.ID), 10)
 	utils.ResponseHandler(w, "CarId", id, 200)
 }
-
 
 func RentCar(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -61,7 +82,6 @@ func RentCar(w http.ResponseWriter, r *http.Request) {
 	db.Save(&FoundedCar)
 	utils.ResponseHandler(w, "message", "status updated to rented", 200)
 }
-
 
 func ReturnCar(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -85,17 +105,15 @@ func ReturnCar(w http.ResponseWriter, r *http.Request) {
 	// {
 	// 	"driven":7000
 	// }
-	
+
 	err := json.NewDecoder(r.Body).Decode(&temp)
 	if err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
-        return
-    }
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	FoundedCar.Mileage = FoundedCar.Mileage + temp.Driven
 	FoundedCar.Status = "available"
 	db.Save(&FoundedCar)
 	utils.ResponseHandler(w, "message", "car status updated to available, mileage updated", 200)
 }
-
-
